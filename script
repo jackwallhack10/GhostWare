@@ -1,4 +1,4 @@
-  local library = {
+local library = {
     flags = {}
   }
   library.Flags = library.flags
@@ -345,14 +345,18 @@ end
     })
   end
 
-  if syn.protect_gui then
-    syn.protect_gui(Window)
-    Window.Parent = CoreGui
-  elseif gethui then
-    Window.Parent = gethui()
-  else
-    Window.Parent = CoreGui
-  end
+  -- Remove syn.protect_gui logic
+  -- (Lines 347-348)
+  -- if syn.protect_gui then
+  --     syn.protect_gui(Window)
+  -- end
+  -- if gethui then
+  --     Window.Parent = gethui()
+  -- else
+  --     Window.Parent = CoreGui
+  -- end
+  Window.Parent = CoreGui
+  print('GhostWare UI library loaded successfully!')
 
   local ResizeButton = Window.Main.Bottom.ResizeIcon.ResizeButton
   local TabContainer = Window.Main.Topbar.TabContainer
