@@ -8,4 +8,4 @@ def home():
 
 @app.route("/hello")
 def hello():
-    return jsonify({"message": "Hello Roblox!"})
+    return jsonify({"message": "api working"})
