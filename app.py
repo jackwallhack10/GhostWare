@@ -24,7 +24,7 @@ def generate_key(duration_minutes=60):
     keys_data[key] = {
         "expires": expire_time.isoformat(),
         "paused": False,
-        "hwid": None  # will lock to first HWID
+        "hwid": None  # locks to first HWID
     }
     save_keys()
     return key
@@ -55,59 +55,96 @@ def validate_key():
     
     return jsonify({"valid": True})
 
-# Pause/unpause key
-@app.route("/key/<key>/pause", methods=["POST"])
-def pause_key(key):
-    if key not in keys_data:
-        return jsonify({"status": "error", "message": "Key not found"}), 404
-    keys_data[key]["paused"] = True
-    save_keys()
-    return jsonify({"status": "success", "key": key, "paused": True})
+@app.route("/key_action", methods=["POST"])
+def key_action():
+    data = request.get_json()
+    key = data.get("key")
+    action = data.get("action")
+    value = data.get("value")
 
-@app.route("/key/<key>/unpause", methods=["POST"])
-def unpause_key(key):
     if key not in keys_data:
-        return jsonify({"status": "error", "message": "Key not found"}), 404
-    keys_data[key]["paused"] = False
-    save_keys()
-    return jsonify({"status": "success", "key": key, "paused": False})
+        return jsonify({"status":"error","message":"Key not found"}),404
 
-# Delete key
-@app.route("/key/<key>/delete", methods=["POST"])
-def delete_key(key):
-    if key not in keys_data:
-        return jsonify({"status": "error", "message": "Key not found"}), 404
-    del keys_data[key]
-    save_keys()
-    return jsonify({"status": "success", "deleted": key})
+    key_info = keys_data[key]
 
-# Reset HWID
-@app.route("/key/<key>/reset_hwid", methods=["POST"])
-def reset_hwid(key):
-    if key not in keys_data:
-        return jsonify({"status": "error", "message": "Key not found"}), 404
-    keys_data[key]["hwid"] = None
+    if action == "add_time":
+        try:
+            minutes = int(value)
+            key_info["expires"] = (datetime.fromisoformat(key_info["expires"]) + timedelta(minutes=minutes)).isoformat()
+        except:
+            return jsonify({"status":"error","message":"Invalid value"}),400
+    elif action == "reset_hwid":
+        key_info["hwid"] = None
+    elif action == "delete":
+        del keys_data[key]
+        save_keys()
+        return jsonify({"status":"success","deleted":key})
+
     save_keys()
-    return jsonify({"status": "success", "key": key, "hwid": None})
+    return jsonify({"status":"success", "key": key})
 
 # ------------------- Web Interface -------------------
 
 @app.route("/")
 def index():
-    html = "<h1>Executor Key Management</h1>"
-    html += "<h2>Existing Keys</h2><ul>"
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Executor Key Management</title>
+    <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 80%; }
+    th, td { border: 1px solid black; padding: 8px; text-align: center; }
+    button { padding: 5px 10px; margin: 2px; }
+    </style>
+    <script>
+    function keyAction(key, action){
+        if(action === 'add_time'){
+            var minutes = prompt('Enter number of minutes to add:');
+            if(!minutes) return;
+        } else { var minutes = null; }
+
+        fetch('/key_action', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({key:key, action:action, value:minutes})
+        }).then(res=>location.reload())
+    }
+    </script>
+    </head>
+    <body>
+    <h1>Executor Key Management</h1>
+    <h2>Existing Keys</h2>
+    <table>
+    <tr><th>Key</th><th>Status</th><th>Expires</th><th>HWID</th><th>Actions</th></tr>
+    """
     for key, info in keys_data.items():
         status = "Paused" if info["paused"] else "Active"
         hwid = info["hwid"] or "None"
         expire = info["expires"]
-        html += f"<li>{key} - {status} - Expires: {expire} - HWID: {hwid}</li>"
-    html += "</ul>"
+        html += f"""
+        <tr>
+        <td>{key}</td>
+        <td>{status}</td>
+        <td>{expire}</td>
+        <td>{hwid}</td>
+        <td>
+        <button onclick="keyAction('{key}','add_time')">Add Time</button>
+        <button onclick="keyAction('{key}','reset_hwid')">Reset HWID</button>
+        <button onclick="keyAction('{key}','delete')">Delete</button>
+        </td>
+        </tr>
+        """
+
+    html += "</table><h2>Generate New Key</h2>"
     html += """
-    <h2>Generate New Key</h2>
     <form method='post' action='/generate_key_form'>
     Duration (minutes): <input name='duration' type='number' value='60'/>
     <button type='submit'>Generate</button>
     </form>
+    </body>
+    </html>
     """
     return render_template_string(html)
 
