@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "changeme")
 
 SCRIPT_FILE = "script.lua"
-OWNER_PASSWORD = os.environ.get(" HRErege2342dfs352", "changeme")
+OWNER_PASSWORD = os.environ.get("HRErege2342dfs352", "changeme")
 KEY_FILE = "keys.json"
 
 # Load keys from file
