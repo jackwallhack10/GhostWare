@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 from flask import Flask, request, send_file, render_template_string, redirect, url_for, flash, jsonify
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET", "changeme")
+app.secret_key = os.environ.get("FLASK_SECRET", "supersecret123")  # Any random string
 
 SCRIPT_FILE = "script.lua"
-OWNER_PASSWORD = os.environ.get("HRErege2342dfs352", "changeme")
+OWNER_PASSWORD = "HRErege2342dfs352"
 KEY_FILE = "keys.json"
 
 # Load keys from file
@@ -23,7 +23,7 @@ def save_keys(keys):
     with open(KEY_FILE, "w") as f:
         json.dump(keys, f, indent=4)
 
-# Check if a key is valid and not expired
+# Check if a key is valid
 def is_key_valid(key):
     keys = load_keys()
     if key in keys:
@@ -45,7 +45,7 @@ def get_script():
     return "No script uploaded yet.", 404
 
 # -------------------------------
-# Owner upload page
+# Owner upload page & key management
 # -------------------------------
 @app.route("/", methods=["GET", "POST"])
 def upload_page():
@@ -70,7 +70,6 @@ def upload_page():
         filesize = os.path.getsize(temp_path)
         message = f"Uploaded '{filename}' ({filesize} bytes). Click Save to finalize."
 
-    # Load current keys
     keys = load_keys()
     key_list = [(k, v) for k, v in keys.items()]
 
@@ -83,7 +82,7 @@ def upload_page():
             body { font-family: Arial, sans-serif; margin: 50px; }
             .message { color: green; }
             .error { color: red; }
-            table { border-collapse: collapse; width: 50%; margin-top: 20px; }
+            table { border-collapse: collapse; width: 70%; margin-top: 20px; }
             th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
             button { margin-top: 5px; }
         </style>
@@ -115,8 +114,9 @@ def upload_page():
 
         <h2>Key Management</h2>
         <form method="POST" action="/generate_key">
-            <label>Key Duration (minutes): </label><input type="number" name="duration" min="1" required>
-            <label>Owner Password: </label><input type="password" name="password" required>
+            <label>Key Duration (minutes): </label>
+            <input type="number" name="duration" min="1" required>
+            <input type="hidden" name="password" value="HRErege2342dfs352">
             <button type="submit">Generate Key</button>
         </form>
 
@@ -129,12 +129,12 @@ def upload_page():
                 <td>
                     <form style="display:inline;" method="POST" action="/delete_key">
                         <input type="hidden" name="key" value="{{key}}">
-                        <input type="hidden" name="password" value="{{request.args.get('password','')}}">
+                        <input type="hidden" name="password" value="HRErege2342dfs352">
                         <button type="submit">Delete</button>
                     </form>
                     <form style="display:inline;" method="POST" action="/extend_key">
                         <input type="hidden" name="key" value="{{key}}">
-                        <input type="hidden" name="password" value="{{request.args.get('password','')}}">
+                        <input type="hidden" name="password" value="HRErege2342dfs352">
                         <input type="number" name="extra_minutes" placeholder="Minutes" required>
                         <button type="submit">Extend</button>
                     </form>
@@ -148,7 +148,7 @@ def upload_page():
     return render_template_string(html, message=message, key_list=key_list)
 
 # -------------------------------
-# Save uploaded file
+# Save uploaded Lua script
 # -------------------------------
 @app.route("/save", methods=["POST"])
 def save_file():
@@ -161,7 +161,7 @@ def save_file():
     return redirect(url_for("upload_page"))
 
 # -------------------------------
-# Generate new key
+# Generate a new key
 # -------------------------------
 @app.route("/generate_key", methods=["POST"])
 def generate_key():
@@ -186,7 +186,7 @@ def generate_key():
     return redirect(url_for("upload_page"))
 
 # -------------------------------
-# Delete key
+# Delete a key
 # -------------------------------
 @app.route("/delete_key", methods=["POST"])
 def delete_key():
