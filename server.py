@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "changeme")  # Needed for flashing messages
 
 SCRIPT_FILE = "script.lua"
-UPLOAD_KEY = os.environ.get("UPLOAD_KEY", "changeme")  # Optional password for web upload
+UPLOAD_KEY = os.environ.get("UPLOAD_KEY", "changeme")  # Password for web upload
 
 # Serve the Lua script
 @app.route("/script.lua", methods=["GET"])
@@ -22,7 +22,7 @@ def upload_page():
     filesize = None
 
     if request.method == "POST":
-        # Optional password check
+        # Password check
         password = request.form.get("password", "")
         if password != UPLOAD_KEY:
             flash("Unauthorized: Wrong password!", "error")
@@ -45,20 +45,16 @@ def upload_page():
         filesize = os.path.getsize(temp_path)
         message = f"Uploaded '{filename}' ({filesize} bytes). Click Save to finalize."
 
-        # Store info in session for saving
-        request.environ["uploaded_file"] = temp_path
-
-    # HTML template
-    html = f"""
+    html = """
     <!DOCTYPE html>
     <html>
     <head>
         <title>Lua Script Upload</title>
         <style>
-            body {{ font-family: Arial, sans-serif; margin: 50px; }}
-            .message {{ margin-top: 20px; color: green; }}
-            .error {{ color: red; }}
-            button {{ margin-top: 10px; padding: 5px 15px; }}
+            body { font-family: Arial, sans-serif; margin: 50px; }
+            .message { margin-top: 20px; color: green; }
+            .error { color: red; }
+            button { margin-top: 10px; padding: 5px 15px; }
         </style>
     </head>
     <body>
@@ -80,7 +76,7 @@ def upload_page():
             <div class="message">
                 <p>{{message}}</p>
                 <form method="POST" action="/save">
-                    <input type="hidden" name="temp_file" value="{{temp_file}}">
+                    <input type="hidden" name="temp_file" value="temp_uploaded.lua">
                     <button type="submit">Save</button>
                 </form>
             </div>
@@ -89,7 +85,7 @@ def upload_page():
     </html>
     """
 
-    return render_template_string(html, message=message, temp_file="temp_uploaded.lua", filename=filename, filesize=filesize)
+    return render_template_string(html, message=message)
 
 
 # Save uploaded file as script.lua
